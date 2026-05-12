@@ -1,53 +1,136 @@
 # RISC-V-QEMU-Kernel
 
-RISC-V-QEMU-Kernel is a portfolio-oriented RISC-V teaching kernel project running on QEMU. It integrates boot code, trap handling, process scheduling, synchronization primitives, virtual memory, system calls, file-system support, network-related drivers, a tiny C library and user-level test programs into a single cleaned kernel codebase.
+RISC-V-QEMU-Kernel is a small teaching operating-system kernel for the RISC-V `virt` machine in QEMU. The tree contains the kernel boot path, trap handling, scheduler, synchronization primitives, memory management, system calls, device drivers, a tiny user runtime, and user-space test programs.
 
-本项目由操作系统实验代码重新整理而来，去掉了冗余的分支式课程提交结构，保留最终阶段中具有展示价值的源码，并将其包装为一个完整的 RISC-V / QEMU 教学内核项目。
+## Features
 
-## Project Highlights
-
-- **RISC-V boot and trap flow**: includes boot block, startup code, trap entry, context switching support and linker script configuration.
-- **Kernel process system**: provides PCB management, scheduler, process/task loading, sleep queues, CPU affinity and SMP-related support.
-- **Synchronization primitives**: includes locks, barriers, condition variables and mailbox-style communication.
-- **Virtual memory and paging**: implements page allocation, page table sharing/mapping, page fault handling, shared memory and swap-related modules.
-- **System-call and user runtime support**: keeps syscall dispatch, tiny libc wrappers, shell utilities and user-space test programs.
-- **Device and I/O support**: includes PLIC, screen, E1000/network-related code, pipe and file-system modules.
-- **QEMU/GDB workflow**: keeps the Makefile, linker script and `.gdbinit` for low-level kernel debugging context.
+- **RISC-V boot flow**: boot block, startup assembly, linker script, CSR helpers, and QEMU entry configuration.
+- **Trap and interrupt handling**: trap entry code, syscall dispatch, timer handling, external interrupt support, and page-fault handling.
+- **Process management**: process control blocks, task loading, ready/sleep queues, wait/exit handling, CPU affinity, and SMP support.
+- **Synchronization and IPC**: mutex locks, barriers, condition variables, mailboxes, and pipes.
+- **Memory management**: physical page allocation, virtual mapping, user page tables, shared memory, and swap-related code.
+- **File-system and I/O support**: file-system routines, screen output, PLIC support, and E1000/network modules.
+- **User-space runtime and tests**: tiny libc, syscall wrappers, shell code, and staged user programs under `test/`.
 
 ## Repository Layout
 
 ```text
 RISC-V-QEMU-Kernel/
-├── arch/riscv/          # RISC-V boot, trap, startup, CSR and architecture support
-├── drivers/             # PLIC, screen and E1000-related drivers
-├── include/             # Kernel, syscall, type and OS subsystem headers
-├── init/                # Kernel entry initialization
-├── kernel/              # Core kernel subsystems
-│   ├── fs/              # File-system support
-│   ├── irq/             # Interrupt and page fault handling
-│   ├── loader/          # Program/task loading
-│   ├── locking/         # Locks, barriers, conditions and mailboxes
-│   ├── mm/              # Physical/virtual memory, mapping, swap and shared memory
-│   ├── net/             # Network and stream support
-│   ├── pipe/            # Pipe implementation
-│   ├── sched/           # Process table, scheduler, timing and workload logic
-│   ├── smp/             # Multi-core support
-│   ├── syscall/         # System-call dispatch
-│   └── task/            # Task management
-├── libs/                # Kernel-side support library
-├── test/                # User programs and staged kernel tests
-├── tiny_libc/           # User-side libc/syscall wrapper support
-├── tools/               # Image/network helper tools and scripts
-├── Makefile             # QEMU-oriented build entry from the original project
-├── riscv.lds            # RISC-V linker script
-└── docs/                # Portfolio documentation and architecture notes
+|-- arch/riscv/          # RISC-V boot, trap, startup, CSR, and architecture support
+|-- drivers/             # PLIC, screen, and E1000-related drivers
+|-- include/             # Kernel, syscall, type, and subsystem headers
+|-- init/                # Kernel initialization entry
+|-- kernel/              # Core kernel subsystems
+|   |-- fs/              # File-system support
+|   |-- irq/             # Interrupt and page-fault handling
+|   |-- loader/          # Program and task loading
+|   |-- locking/         # Locks, barriers, conditions, and mailboxes
+|   |-- mm/              # Physical/virtual memory, mappings, swap, and shared memory
+|   |-- net/             # Network and stream support
+|   |-- pipe/            # Pipe implementation
+|   |-- sched/           # Process table, scheduler, timing, and workload logic
+|   |-- smp/             # Multi-core support
+|   |-- syscall/         # System-call dispatch
+|   `-- task/            # Task management
+|-- libs/                # Kernel-side support library
+|-- test/                # Shell and user-space test programs
+|-- tiny_libc/           # User-side libc and syscall wrappers
+|-- tools/               # Host-side image creation helper
+|-- Makefile             # Build, run, and debug targets
+|-- riscv.lds            # RISC-V linker script
+`-- .gdbinit             # GDB helper configuration
 ```
 
-## Kernel Architecture
+## Build Environment
+
+The Makefile expects a Linux-style RISC-V development environment. The default tool and path settings are defined near the top of `Makefile`:
+
+```make
+CROSS_PREFIX = riscv64-unknown-linux-gnu-
+DIR_OSLAB    = $(HOME)/OSLab-RISC-V
+DIR_QEMU     = $(DIR_OSLAB)/qemu
+DIR_UBOOT    = $(DIR_OSLAB)/u-boot
+```
+
+Required components include:
+
+- `riscv64-unknown-linux-gnu-gcc`, `ar`, `objdump`, and `gdb`
+- QEMU RISC-V system emulator built under `$(DIR_QEMU)`
+- U-Boot image at `$(DIR_UBOOT)/u-boot`
+- standard Linux build tools such as `make` and `gcc`
+
+If your tools are installed elsewhere, update the variables in `Makefile` before building.
+
+## Build and Run
+
+Build the boot block, kernel, tiny libc, user programs, and image:
+
+```sh
+make
+```
+
+Remove generated build artifacts:
+
+```sh
+make clean
+```
+
+Run the kernel in QEMU:
+
+```sh
+make run
+```
+
+Run with two QEMU CPUs:
+
+```sh
+make run-smp
+```
+
+Start QEMU and wait for GDB on port `1234`:
+
+```sh
+make debug
+```
+
+Attach GDB to a waiting debug session:
+
+```sh
+make gdb
+```
+
+Network targets are also available, but they expect a Linux TAP setup matching the QEMU scripts configured by `DIR_QEMU`:
+
+```sh
+make run-net
+make debug-net
+```
+
+## User Programs and Tests
+
+The `PROJECT_IDX` variable in `Makefile` selects which staged test directory is built into the image:
+
+```make
+PROJECT_IDX = 6
+DIR_TEST_PROJ = $(DIR_TEST)/test_project$(PROJECT_IDX)
+```
+
+The test directories cover different kernel subsystems:
+
+- `test_project1`: basic user programs and loading tests
+- `test_project2`: scheduling, sleep, timer, and locking tests
+- `test_project3`: synchronization, threads, mailbox, affinity, and multicore tests
+- `test_project4`: memory, swap, pipe, and IPC tests
+- `test_project5`: network send/receive tests
+- `test_project6`: file-system-oriented tests
+
+To build a different test group, change `PROJECT_IDX` and rebuild.
+
+## Kernel Subsystems
 
 ### Boot and Trap Handling
 
-Key files:
+Relevant files:
 
 ```text
 arch/riscv/boot/bootblock.S
@@ -58,11 +141,11 @@ arch/riscv/kernel/trap.S
 riscv.lds
 ```
 
-These files define the low-level startup path, kernel entry, trap transition and memory layout used by the QEMU RISC-V environment.
+These files define the low-level startup path, kernel entry, trap transition, and memory layout used by the QEMU RISC-V target.
 
 ### Scheduling and Process Management
 
-Key files:
+Relevant files:
 
 ```text
 kernel/sched/proc.c
@@ -73,11 +156,11 @@ include/os/proc.h
 include/os/sched.h
 ```
 
-This subsystem manages process control blocks, ready/sleep queues, CPU affinity masks, context switching and timer-driven scheduling behavior.
+This subsystem manages process control blocks, ready and sleep queues, CPU affinity masks, context switching, and timer-driven scheduling.
 
 ### Memory Management
 
-Key files:
+Relevant files:
 
 ```text
 kernel/mm/mm.c
@@ -89,11 +172,11 @@ include/os/mm.h
 include/os/swap.h
 ```
 
-The memory subsystem covers page allocation, physical/virtual address conversion, user page mapping, shared memory and swap-related support.
+The memory subsystem covers page allocation, physical/virtual address conversion, user page mapping, shared memory, page-fault handling, and swap-related support.
 
 ### Synchronization and IPC
 
-Key files:
+Relevant files:
 
 ```text
 kernel/locking/lock.c
@@ -103,73 +186,23 @@ kernel/locking/mbox.c
 kernel/pipe/pipe.c
 ```
 
-The kernel includes lock primitives, barriers, condition variables, mailbox communication and pipe support for process coordination.
+The kernel includes lock primitives, barriers, condition variables, mailbox communication, and pipe support for process coordination.
 
 ### System Calls and User Runtime
 
-Key files:
+Relevant files:
 
 ```text
 kernel/syscall/syscall.c
+arch/riscv/include/asm/unistd.h
+include/sys/syscall.h
 tiny_libc/syscall.c
 tiny_libc/shell_command.c
 test/shell.c
 ```
 
-The public project preserves both the kernel-side syscall dispatcher and user-side wrappers/tests, making it easier to understand the complete syscall path.
+These files connect user programs to kernel services through syscall numbers, user-side wrappers, the syscall dispatcher, and shell commands.
 
-## Tests and User Programs
+## Generated Files
 
-The `test/` tree contains user programs grouped by subsystem milestones:
-
-- `test_project1`: basic user programs and loading tests,
-- `test_project2`: scheduling, sleep and locking tests,
-- `test_project3`: synchronization, threads and multicore tests,
-- `test_project4`: memory, swap, pipe and IPC tests,
-- `test_project5`: network send/receive tests,
-- `test_project6`: file-system-oriented tests.
-
-The branch-per-project history was not kept in the public packaging. Instead, these tests remain as a unified test suite for the final integrated kernel.
-
-## Build Notes
-
-This repository preserves the original QEMU-oriented build files, but it is primarily packaged for source review and portfolio display. The expected environment may include:
-
-- RISC-V cross compiler,
-- QEMU RISC-V system emulator,
-- GDB for low-level debugging,
-- Make-based build flow.
-
-Start from:
-
-```text
-Makefile
-.gdbinit
-riscv.lds
-arch/riscv/
-```
-
-Generated images and local binary artifacts are intentionally excluded from the public repository.
-
-## What Was Repackaged
-
-This public repository was derived from a private branch-per-project operating-system lab repository. The public version:
-
-- uses the final integrated kernel snapshot as the default codebase,
-- removes redundant course branch structure,
-- removes generated images, editor cache and binary artifacts,
-- keeps source files that demonstrate kernel architecture and implementation depth,
-- presents the project as one RISC-V / QEMU kernel system.
-
-## Project Value
-
-This project demonstrates:
-
-- RISC-V low-level boot and trap handling,
-- QEMU-based kernel development,
-- process scheduling and context switching,
-- synchronization and IPC design,
-- virtual memory and paging implementation,
-- syscall and tiny libc integration,
-- file-system, pipe and network-related kernel modules,
-- low-level debugging workflow with GDB/QEMU.
+The build creates local artifacts such as `build/`, image files, ELF files, and disassembly output. These files are generated from source and are not required in version control.
