@@ -1,0 +1,26 @@
+# Generated files
+build/
+out/
+debug/
+image
+*.log
+*.tmp
+*.bak
+*.oldbak
+*.idx
+
+# Binary artifacts
+*.o
+*.a
+*.elf
+*.bin
+*.out
+*.exe
+fletcher
+pktRxTx
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
