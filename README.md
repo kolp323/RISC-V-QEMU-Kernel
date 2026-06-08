@@ -1,115 +1,115 @@
-# RISC-V QEMU Kernel
+# RISC-V QEMU 教学内核
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-[**中文文档**](README_zh.md) | [**English**](README.md)
+[**中文文档**](README.md) | [**English**](README_en.md)
 
-`RISC-V-QEMU-Kernel` is a lightweight, educational operating system kernel designed for the RISC-V architecture, running on the QEMU emulator. It integrates core OS components into a clean, standalone codebase, providing an excellent reference for learning low-level system programming, kernel architecture, and RISC-V instruction set behavior.
+`RISC-V-QEMU-Kernel` 是一个为 RISC-V 架构设计的轻量级教学操作系统内核，运行在 QEMU 模拟器上。本项目将操作系统的核心组件整合到一个干净、独立的源码库中，为学习底层系统编程、内核架构和 RISC-V 指令集行为提供了绝佳的参考。
 
-This project was originally derived from a comprehensive operating system laboratory curriculum. It has been refactored and consolidated into a unified kernel project, removing the staggered educational branch structure to present a complete, observable system.
+本项目最初由一套完整的操作系统实验课程代码衍生而来。经过重构与整合，去除了原有的阶梯式教学分支结构，呈现为一个完整、可观测的统一内核项目。
 
-## 🌟 Key Features
+## 🌟 核心特性
 
-*   **Boot & Trap Architecture:** Complete RISC-V low-level startup path, including boot blocks, assembly initialization, trap entry/exit, context switching, and linker scripts.
-*   **Process & Scheduling:** Robust process management featuring PCBs, a ready/sleep queue scheduler, process/task loading, CPU affinity, and SMP (Symmetric Multiprocessing) support.
-*   **Synchronization Primitives:** Implementation of essential concurrency controls, including spinlocks, barriers, condition variables, and mailbox-style IPC.
-*   **Memory Management:** Full virtual memory subsystem supporting physical page allocation, multi-level page table mapping, page fault handling, shared memory, and a functional swap mechanism.
-*   **System Calls & Runtime:** A defined system call ABI with a kernel-side dispatcher, accompanied by a minimal `libc` (tiny libc) and interactive user-space shell tests.
-*   **Device Drivers:** Support for essential QEMU virt machine peripherals, including the PLIC (Platform-Level Interrupt Controller), screen output, and E1000 network interfaces.
-*   **File System & IPC:** Implementation of basic file system structures and Unix-style pipes.
-*   **Debugging Ready:** Pre-configured with `Makefile`, linker scripts (`riscv.lds`), and `.gdbinit` for an immediate, low-level GDB debugging experience.
+*   **启动与异常架构:** 完整的 RISC-V 底层启动路径，包括引导块 (boot block)、汇编初始化、异常入口/出口、上下文切换以及链接器脚本。
+*   **进程与调度:** 健壮的进程管理，包含 PCB 管理、就绪/睡眠队列调度器、进程/任务加载、CPU 亲和性以及 SMP (对称多处理) 支持。
+*   **同步原语:** 实现了关键的并发控制机制，包括自旋锁、屏障 (barrier)、条件变量以及邮箱式进程间通信 (IPC)。
+*   **内存管理:** 完整的虚拟内存子系统，支持物理页分配、多级页表映射、缺页异常处理、共享内存以及功能性的 Swap 交换机制。
+*   **系统调用与运行时:** 定义了系统调用 ABI 和内核侧分发器，并附带一个极简的 `libc` (tiny libc) 和交互式的用户态 Shell 测试程序。
+*   **设备驱动:** 支持 QEMU virt 机器的基本外设，包括 PLIC (平台级中断控制器)、屏幕输出和 E1000 网络接口。
+*   **文件系统与 IPC:** 实现了基础的文件系统结构和类 Unix 管道 (Pipe)。
+*   **开箱即用的调试:** 预配置了 `Makefile`、链接脚本 (`riscv.lds`) 和 `.gdbinit`，可立即体验底层的 GDB 调试流程。
 
-## 📂 Project Structure
+## 📂 项目结构
 
 ```text
 RISC-V-QEMU-Kernel/
-├── arch/riscv/          # Architecture-specific code: boot, trap, startup, CSRs
-├── drivers/             # Device drivers: PLIC, screen, E1000
-├── include/             # Global headers for kernel subsystems and syscalls
-├── init/                # Kernel entry point and initialization sequence
-├── kernel/              # Core kernel modules
-│   ├── fs/              # File system implementation
-│   ├── irq/             # Interrupt and page fault handlers
-│   ├── loader/          # ELF/binary loading mechanisms
-│   ├── locking/         # Synchronization primitives
-│   ├── mm/              # Memory management (PMM, VMM, Swap, SHM)
-│   ├── net/             # Network stack basics
-│   ├── pipe/            # Pipe IPC
-│   ├── sched/           # Process scheduling and timer management
-│   ├── smp/             # Multicore initialization and coordination
-│   ├── syscall/         # System call routing
-│   └── task/            # Task state management
-├── libs/                # Kernel-space utility libraries (string, print, etc.)
-├── test/                # User-space test applications and shell
-├── tiny_libc/           # Minimal standard library for user-space programs
-├── tools/               # Build helpers and network configuration scripts
-├── Makefile             # Primary build script
-├── riscv.lds            # Linker script for memory layout
-└── docs/                # Architectural documentation and notes
+├── arch/riscv/          # 架构相关代码：启动、异常、CSR寄存器
+├── drivers/             # 设备驱动：PLIC、屏幕、E1000
+├── include/             # 内核子系统和系统调用的全局头文件
+├── init/                # 内核入口点和初始化序列
+├── kernel/              # 核心内核模块
+│   ├── fs/              # 文件系统实现
+│   ├── irq/             # 中断和缺页异常处理
+│   ├── loader/          # ELF/二进制程序加载机制
+│   ├── locking/         # 同步原语 (锁、条件变量等)
+│   ├── mm/              # 内存管理 (物理/虚拟内存、Swap、共享内存)
+│   ├── net/             # 基础网络栈
+│   ├── pipe/            # 管道 IPC
+│   ├── sched/           # 进程调度和定时器管理
+│   ├── smp/             # 多核初始化与协同
+│   ├── syscall/         # 系统调用路由
+│   └── task/            # 任务状态管理
+├── libs/                # 内核空间工具库 (字符串、打印等)
+├── test/                # 用户态测试程序和 Shell
+├── tiny_libc/           # 用于用户态程序的极简标准库
+├── tools/               # 构建辅助工具和网络配置脚本
+├── Makefile             # 主构建脚本
+├── riscv.lds            # 控制内存布局的链接脚本
+└── docs/                # 架构文档和笔记
 ```
 
-## 🚀 Getting Started
+## 🚀 快速开始
 
-### Prerequisites
+### 环境依赖
 
-To build and run this kernel, you need a standard RISC-V cross-compilation toolchain and the QEMU emulator installed on your system.
+要构建并运行此内核，您的系统需要安装标准的 RISC-V 交叉编译工具链和 QEMU 模拟器。
 
-*   **RISC-V GNU Compiler Toolchain** (e.g., `riscv64-unknown-elf-gcc`)
-*   **QEMU for RISC-V** (e.g., `qemu-system-riscv64`)
-*   **GDB Multiarch** or RISC-V GDB (for debugging)
+*   **RISC-V GNU Compiler Toolchain** (例如: `riscv64-unknown-elf-gcc`)
+*   **QEMU for RISC-V** (例如: `qemu-system-riscv64`)
+*   **GDB Multiarch** 或 RISC-V GDB (用于调试)
 *   **Make**
 
-### Building and Running
+### 构建与运行
 
-*(Note: Specific make targets depend on the internal `Makefile` structure. The following are typical examples.)*
+*(注意：具体的 Make 目标取决于内部 `Makefile` 的定义。以下为典型示例。)*
 
-1.  **Clone the repository:**
+1.  **克隆仓库:**
     ```bash
     git clone https://github.com/kolp323/RISC-V-QEMU-Kernel.git
     cd RISC-V-QEMU-Kernel
     ```
 
-2.  **Build the kernel image:**
+2.  **构建内核镜像:**
     ```bash
     make all
     ```
 
-3.  **Run in QEMU:**
+3.  **在 QEMU 中运行:**
     ```bash
     make run
     ```
 
-4.  **Debug with GDB:**
-    Open two terminals.
-    In terminal 1 (start QEMU waiting for GDB):
+4.  **使用 GDB 调试:**
+    打开两个终端。
+    在终端 1 (启动 QEMU 并等待 GDB 连接):
     ```bash
     make debug
     ```
-    In terminal 2 (connect GDB):
+    在终端 2 (连接 GDB):
     ```bash
     riscv64-unknown-elf-gdb -x .gdbinit
     ```
 
-*(Please inspect the `Makefile` for exact targets if the above standard commands differ.)*
+*(如果实际命令与上述标准命令有所不同，请查阅项目根目录下的 `Makefile` 获取准确指令。)*
 
-## 🛠️ Testing
+## 🛠️ 测试
 
-The `test/` directory contains a suite of user-space programs designed to validate different subsystems of the kernel. These are logically grouped (e.g., `test_project1` through `test_project6`) representing the evolution of the kernel from basic execution to complex memory and network operations.
+`test/` 目录包含了一系列用户态程序，用于验证内核的各个子系统。这些程序在逻辑上进行了分组（例如从 `test_project1` 到 `test_project6`），代表了内核从基础执行到复杂的内存和网络操作的演进过程。
 
-These tests are integrated into the final build to verify the holistic functionality of the OS.
+这些测试已被集成到最终的构建中，以验证整个操作系统的综合功能。
 
-## 🤝 Contributing
+## 🤝 参与贡献
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/kolp323/RISC-V-QEMU-Kernel/issues).
+欢迎任何形式的贡献、提交 Issue 或功能请求！请查看 [Issues 页面](https://github.com/kolp323/RISC-V-QEMU-Kernel/issues)。
 
-If you are using this project for learning, bug fixes to existing modules or improvements to documentation are highly appreciated.
+如果您正在使用本项目进行学习，我们非常欢迎您提交针对现有模块的 Bug 修复或对文档的改进。
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork 本项目
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到该分支 (`git push origin feature/AmazingFeature`)
+5. 提交一个 Pull Request (PR)
 
-## 📄 License
+## 📄 开源协议
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+本项目采用 MIT 开源协议 - 详情请参阅 [LICENSE](LICENSE) 文件。
